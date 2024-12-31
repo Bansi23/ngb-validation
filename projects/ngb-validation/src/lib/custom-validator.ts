@@ -30,14 +30,4 @@ export function matchPasswordValidator(passwordField: string, confirmPasswordFie
       return null;
     };
   }
-
-  export function phoneNumberValidator(): ValidatorFn {
-    const phoneNumberPattern = /^(?:\(\d{3}\)|\d{3}-)\d{3}-\d{4}$/;
   
-    return (control: AbstractControl): { [key: string]: any } | null => {
-      if (control?.value && !phoneNumberPattern.test(control.value)) {
-        return { phoneNumber: true }; // Validation fails
-      }
-      return null; // Validation passes
-    };
-  }
