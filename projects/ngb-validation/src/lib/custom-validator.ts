@@ -30,4 +30,25 @@ export function matchPasswordValidator(passwordField: string, confirmPasswordFie
       return null;
     };
   }
+
+  export function strongPasswordValidator(): ValidatorFn {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return (control: AbstractControl): ValidationErrors | null => {
+      return passwordRegex.test(control.value)
+        ? null
+        : { weakPassword: true };
+    };
+  }
+
+  export function fileValidator(allowedTypes: string[], maxSize: number): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const file = control.value as File;
+      if (!file) return null;
+  
+      const isValidType = allowedTypes.includes(file.type);
+      const isValidSize = file.size <= maxSize;
+      return isValidType && isValidSize ? null : { invalidFile: true };
+    };
+  }
+  
   

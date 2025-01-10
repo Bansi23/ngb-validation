@@ -10,6 +10,9 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
+      "loader": [
+        "./dist/loader"
+      ],
       "ngb-validation": [
         "./dist/ngb-validation"
       ]

@@ -1,15 +1,30 @@
-# Ngb Validation Library
 
-The `ngb-validation` library provides a collection of reusable Angular validators for form controls, making form validation easy and consistent across your projects.
+# Custom Angular Validation and Formatting Library
+
+This custom Angular library provides validators and a directive to help with form validation and input formatting. It includes the following features:
+
+- **Custom Validators** for:
+  - No Whitespace
+  - Password Match
+  - URL Format
+  - Strong Password
+  - File Type & Size Validation
+- **Phone Number Formatting** directive to apply specific input formats.
 
 ## Installation
 
-### Using NPM
+To install the library in your Angular project, you can either:
+
+1. **Download** the source files and include them in your project.
+2. **Use npm** to install it (if you plan to publish it to npm later):
+
 ```bash
 npm install ngb-validation
 ```
 
 ### Using Yarn
+Alternatively, you can install it using Yarn:
+
 ```bash
 yarn add ngb-validation
 ```
@@ -18,101 +33,116 @@ yarn add ngb-validation
 
 ## Usage
 
-### Step 1: Import Validators
-Import the required validators into your Angular component:
+### 1. Importing Validators and Directives
+
+Import the required validators and directives into your Angular component or module.
 
 ```typescript
-import { noWhitespaceValidator, matchPasswordValidator } from 'ngb-validation';
+import { noWhitespaceValidator, matchPasswordValidator, urlValidator, strongPasswordValidator, fileValidator, PhoneNumberFormatDirective } from 'ngb-validation';
 ```
 
-### Step 2: Add Validators to Form Controls
-Use the imported validators when building your Angular forms.
-
-**Example:**
+Then, you can apply these validators in your form group:
 
 ```typescript
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { noWhitespaceValidator, matchPasswordValidator } from 'ngb-validation';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { noWhitespaceValidator, matchPasswordValidator, urlValidator, strongPasswordValidator, fileValidator } from 'ngb-validation';
 
 @Component({
-  selector: 'app-example',
-  templateUrl: './example.component.html',
+  selector: 'app-form-example',
+  templateUrl: './form-example.component.html',
+  imports: [PhoneNumberFormatDirective]
 })
-export class ExampleComponent {
+export class FormExampleComponent {
   form: FormGroup;
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
-      name: ['', [Validators.required, noWhitespaceValidator()]],
-      password: ['', [Validators.required, noWhitespaceValidator()]],
-      confirmPassword: ['', [Validators.required, noWhitespaceValidator()]],
-    }, {
-      validators: matchPasswordValidator('password', 'confirmPassword'),
+      username: ['', [noWhitespaceValidator()]],
+      password: ['', [strongPasswordValidator()]],
+      confirmPassword: ['', [matchPasswordValidator('password', 'confirmPassword')]],
+      website: ['', [urlValidator()]],
+      profileImage: ['', [fileValidator(['image/jpeg', 'image/png'], 5000000)]]
     });
+  }
+
+  onSubmit() {
+    if (this.form.valid) {
+      console.log('Form Submitted!', this.form.value);
+    } else {
+      console.log('Form Invalid!');
+    }
   }
 }
 ```
 
-### Step 3: Display Validation Messages
-In your template, display validation messages based on the form control's state.
+### 2. Phone Number Format Directive
+
+To use the phone number format directive, first import it:
+
+```typescript
+import { PhoneNumberFormatDirective } from 'ngb-validation';
+@Component({
+  selector: 'app-form-example',
+  templateUrl: './form-example.component.html',
+  imports: [PhoneNumberFormatDirective]
+  export class FormExampleComponent {
+    ....
+})
+```
+
+Then, add the directive to your component:
+
+```html
+<input type="text" appPhoneNumberFormat format="000-000-0000" [(ngModel)]="phoneNumber" />
+```
+
+This will automatically format the phone number input as the user types. You can also customize the format by changing the `format` input.
+
+### 3. Example HTML Template
+
+Here's an example HTML template for using the validators and phone number format directive:
 
 ```html
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <div>
-    <label>Name</label>
-    <input formControlName="name" />
-    <div *ngIf="form.get('name')?.hasError('whitespace')">
-      Whitespace is not allowed
-    </div>
+  <label for="username">Username:</label>
+  <input id="username" formControlName="username" type="text" />
+  <div *ngIf="form.get('username')?.hasError('whitespace')">
+    Username cannot contain only spaces.
   </div>
 
-  <div>
-    <label>Password</label>
-    <input type="password" formControlName="password" />
+  <label for="password">Password:</label>
+  <input id="password" formControlName="password" type="password" />
+  <div *ngIf="form.get('password')?.hasError('weakPassword')">
+    Password must contain at least 8 characters, including an uppercase letter, a number, and a special character.
   </div>
 
-  <div>
-    <label>Confirm Password</label>
-    <input type="password" formControlName="confirmPassword" />
-    <div *ngIf="form.hasError('passwordMismatch')">
-      Passwords do not match
-    </div>
+  <label for="confirmPassword">Confirm Password:</label>
+  <input id="confirmPassword" formControlName="confirmPassword" type="password" />
+  <div *ngIf="form.get('confirmPassword')?.hasError('passwordMismatch')">
+    Passwords do not match.
+  </div>
+
+  <label for="website">Website URL:</label>
+  <input id="website" formControlName="website" type="text" />
+  <div *ngIf="form.get('website')?.hasError('invalidUrl')">
+    Please enter a valid URL.
+  </div>
+
+  <label for="profileImage">Profile Image (JPEG/PNG):</label>
+  <input id="profileImage" formControlName="profileImage" type="file" />
+  <div *ngIf="form.get('profileImage')?.hasError('invalidFile')">
+    Please upload a valid file type (JPEG/PNG) and ensure the file size is less than 5MB.
+  </div>
+
+  <label for="phoneNumber">Phone Number:</label>
+  <input id="phoneNumber" appPhoneNumberFormat formControlName="phoneNumber" type="text" />
+  <div *ngIf="form.get('phoneNumber')?.hasError('invalidPhoneNumber')">
+    Please enter a valid phone number.
   </div>
 
   <button type="submit" [disabled]="form.invalid">Submit</button>
 </form>
 ```
-
----
-
-## Validators Included
-
-### 1. **No Whitespace Validator**
-Ensures the value of a form control does not contain only whitespace.
-
-**Usage:**
-```typescript
-noWhitespaceValidator(): ValidatorFn
-```
-
-**Error:**
-- `{ whitespace: true }`
-
----
-
-### 2. **Match Password Validator**
-Ensures two form controls (e.g., `password` and `confirmPassword`) match.
-
-**Usage:**
-```typescript
-matchPasswordValidator(passwordField: string, confirmPasswordField: string): ValidatorFn
-```
-
-**Error:**
-- `{ passwordMismatch: true }`
-
----
 
 ## Issues
 If you encounter any issues or bugs, please report them at:
@@ -125,5 +155,6 @@ We welcome contributions! Feel free to submit a pull request or open an issue to
 
 ---
 
-## License
-This library is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+## Conclusion
+
+This library provides essential form validation and input formatting tools for Angular projects. You can easily integrate these custom validators and directives into your forms, providing a better user experience and more consistent validation across your application.
