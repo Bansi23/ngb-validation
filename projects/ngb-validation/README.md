@@ -50,10 +50,10 @@ import { noWhitespaceValidator, matchPasswordValidator, urlValidator, strongPass
 @Component({
   selector: 'app-form-example',
   templateUrl: './form-example.component.html',
-  imports: [PhoneNumberFormatDirective]
 })
 export class FormExampleComponent {
   form: FormGroup;
+  formData: FormData = new FormData();
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
@@ -61,7 +61,7 @@ export class FormExampleComponent {
       password: ['', [strongPasswordValidator()]],
       confirmPassword: ['', [matchPasswordValidator('password', 'confirmPassword')]],
       website: ['', [urlValidator()]],
-      profileImage: ['', [fileValidator(['image/jpeg', 'image/png'], 5000000)]]
+      profileImage: [{}, [fileValidator(['image/jpeg', 'image/png'], 5000000)]]
     });
   }
 
@@ -71,6 +71,23 @@ export class FormExampleComponent {
     } else {
       console.log('Form Invalid!');
     }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+
+    if (input?.files?.length) {
+      const file = input.files[0];
+      let control: any = this.form.get('profileImage');
+      this.form.get('profileImage')?.updateValueAndValidity();
+      control?.setValue(file);
+      if (control?.valid) {
+        console.log('File is valid:', file);
+        // Append the file to FormData
+        this.formData.set('profileImage', file, file.name);
+      }
+    }
+    this.form.get('profileImage')?.markAsTouched();
   }
 }
 ```
@@ -86,6 +103,7 @@ import { PhoneNumberFormatDirective } from 'ngb-validation';
   templateUrl: './form-example.component.html',
   imports: [PhoneNumberFormatDirective]
   export class FormExampleComponent {
+    @Input() format: string = '000-000-0000';
     ....
 })
 ```
@@ -93,14 +111,14 @@ import { PhoneNumberFormatDirective } from 'ngb-validation';
 Then, add the directive to your component:
 
 ```html
-<input type="text" appPhoneNumberFormat format="000-000-0000" [(ngModel)]="phoneNumber" />
+<input type="text" appPhoneNumberFormat [format]="format" [(ngModel)]="phoneNumber" />
 ```
 
 This will automatically format the phone number input as the user types. You can also customize the format by changing the `format` input.
 
 ### 3. Example HTML Template
 
-Here's an example HTML template for using the validators and phone number format directive:
+Here's an example HTML template for using the other validators and phone number format directive:
 
 ```html
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -129,13 +147,13 @@ Here's an example HTML template for using the validators and phone number format
   </div>
 
   <label for="profileImage">Profile Image (JPEG/PNG):</label>
-  <input id="profileImage" formControlName="profileImage" type="file" />
-  <div *ngIf="form.get('profileImage')?.hasError('invalidFile')">
-    Please upload a valid file type (JPEG/PNG) and ensure the file size is less than 5MB.
-  </div>
+  <input id="profileImage" formControlName="profileImage" type="file" class="form-control" (change)="onFileSelected($event)" [ngClass]="{'is-invalid': form.get('profileImage')?.invalid && form.get('profileImage')?.touched}" />
+    <div *ngIf="form.get('profileImage')?.touched && form.get('profileImage')?.hasError('invalidFile')" class="invalid-feedback">
+      Please upload a valid file type (JPEG/PNG) and ensure the file size is less than 5MB.
+    </div>
 
   <label for="phoneNumber">Phone Number:</label>
-  <input id="phoneNumber" appPhoneNumberFormat formControlName="phoneNumber" type="text" />
+  <input id="phoneNumber" appPhoneNumberFormat [format]="format" formControlName="phoneNumber" type="text" />
   <div *ngIf="form.get('phoneNumber')?.hasError('invalidPhoneNumber')">
     Please enter a valid phone number.
   </div>
